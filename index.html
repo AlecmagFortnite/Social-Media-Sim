@@ -183,28 +183,28 @@ width:320px;
 text-align:center;
 }
 .modal button{margin-top:10px;}
-/* Leaderboard styling */
-#leaderboard div{
+/* Global Leaderboard */
+#globalLeaderboard div{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  padding:8px 12px;
-  margin:4px 0;
+  padding:6px 10px;
+  margin:2px 0;
   background:#111;
-  border-radius:12px;
-  font-size:14px;
-  transition:0.3s;
-  box-shadow:0 0 5px #000;
+  border-radius:10px;
+  font-size:13px;
+  transition:.3s;
 }
-#leaderboard div:hover{
+#globalLeaderboard div:hover{
   transform:scale(1.02);
-  box-shadow:0 0 15px var(--glow);
+  box-shadow:0 0 10px var(--glow);
 }
-#leaderboard div:nth-child(1){background:#ffd700;color:#000;font-weight:900;box-shadow:0 0 20px #ffd700;}
-#leaderboard div:nth-child(2){background:#c0c0c0;color:#000;font-weight:900;box-shadow:0 0 20px #c0c0c0;}
-#leaderboard div:nth-child(3){background:#cd7f32;color:#000;font-weight:900;box-shadow:0 0 20px #cd7f32;}
-#leaderboard div span.name{flex:1;font-weight:600;}
-#leaderboard div span.stats{flex:2;text-align:right;color:#aaa;font-size:13px;}
+#globalLeaderboard div:nth-child(1){background:#ffd700;color:#000;font-weight:700;}
+#globalLeaderboard div:nth-child(2){background:#c0c0c0;color:#000;font-weight:700;}
+#globalLeaderboard div:nth-child(3){background:#cd7f32;color:#000;font-weight:700;}
+#globalLeaderboard div span.name{flex:1;}
+#globalLeaderboard div span.value{font-weight:700;color:var(--accent);}
+#leaderStat{margin-bottom:6px;}
 </style>
 </head>
 <body>
@@ -264,8 +264,14 @@ text-align:center;
 </div>
 
 <div class="section">
-<h3>🏅 Rangliste</h3>
-<div id="leaderboard"></div>
+<h3>🌐 Globale Rangliste</h3>
+<select id="leaderStat" onchange="renderGlobalLeaderboard()">
+<option value="views">Views</option>
+<option value="likes">Likes</option>
+<option value="subs">Abos</option>
+<option value="money">Geld</option>
+</select>
+<div id="globalLeaderboard"></div>
 </div>
 
 <div class="section">
@@ -303,8 +309,8 @@ let current = null;
 const $=id=>document.getElementById(id);
 
 function saveAccounts(){localStorage.setItem("YT_ACCOUNTS",JSON.stringify(allAccounts));}
-function showAccountModal(){document.getElementById("accountModal").classList.add("show");renderAccounts();}
-function closeAccountModal(){document.getElementById("accountModal").classList.remove("show");}
+function showAccountModal(){$("accountModal").classList.add("show"); renderAccounts();}
+function closeAccountModal(){$("accountModal").classList.remove("show");}
 
 function renderAccounts(){
   let list = $("accountList"); list.innerHTML="";
@@ -346,20 +352,21 @@ $("uploads").textContent=current.uploads;
 for(let a in current.awards) if(current.awards[a]) $(a).classList.add("unlocked"); else $(a).classList.remove("unlocked");
 }
 
-function renderLeaderboard(){
-  const lb = $("leaderboard"); lb.innerHTML="";
+function renderGlobalLeaderboard(){
+  const stat = $("leaderStat").value;
+  const lb = $("globalLeaderboard");
+  lb.innerHTML = "";
   let arr = Object.keys(allAccounts).map(name => ({name,...allAccounts[name]}));
-  arr.sort((a,b)=>b.views - a.views);
-  arr.forEach((acc,i)=>{
-    let div=document.createElement("div");
-    let rank=i+1;
-    div.innerHTML=`<span class="name">#${rank} ${acc.name}</span>
-      <span class="stats">Views: ${acc.views.toLocaleString()} | Likes: ${acc.likes.toLocaleString()} | Subs: ${acc.subs.toLocaleString()} | $${acc.money.toLocaleString()}</span>`;
+  arr.sort((a,b)=>b[stat]-a[stat]);
+  arr.slice(0,100).forEach((acc,i)=>{
+    let div = document.createElement("div");
+    div.innerHTML = `<span class="name">#${i+1} ${acc.name}</span>
+                     <span class="value">${stat==="money"?"$":""}${acc[stat].toLocaleString()}</span>`;
     lb.appendChild(div);
   });
 }
 
-function updateAll(){update(); renderLeaderboard();}
+function updateAll(){update(); renderGlobalLeaderboard();}
 function save(){saveAccounts();}
 
 function viralViews(){let r=Math.random()*current.luck;if(r>100) return rand(100_000_000,1_000_000_000); if(r>10) return rand(10_000_000,100_000_000); if(r>0.995) return rand(1_000_000,10_000_000); return rand(100_000,1_000_000);}
