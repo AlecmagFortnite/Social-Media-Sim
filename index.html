@@ -2,393 +2,234 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Social Media Simulator – V6</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Social Media Simulator</title>
+
 <style>
 :root{
---bg:#0b0b0b;
---card:#161616;
---accent:#ff0033;
---soft:#aaa;
---glow:rgba(255,0,60,.6);
+  --accent:#ff4d4d;
+  --glow:0 0 25px var(--accent);
 }
-*{box-sizing:border-box;font-family:Segoe UI,sans-serif}
+
 body{
-margin:0;
-background:radial-gradient(circle at top,var(--bg),#000);
-color:white;
-min-height:100vh;
-display:flex;
-justify-content:center;
-align-items:flex-start;
-overflow-y:auto;
-padding:30px 0;
-transition:background .4s,color .4s;
+  margin:0;
+  background:#0b0b0b;
+  color:white;
+  font-family:Inter,Arial;
 }
-.scrollHint{
-position:fixed;
-bottom:15px;
-left:50%;
-transform:translateX(-50%);
-font-size:13px;
-color:#aaa;
-opacity:.7;
-animation:bounce 1.5s infinite;
-z-index:5;
-}
-@keyframes bounce{
-0%,100%{transform:translate(-50%,0)}
-50%{transform:translate(-50%,6px)}
-}
+
 .container{
-width:720px;
-max-width:95vw;
-background:var(--card);
-border-radius:26px;
-padding:20px;
-box-shadow:0 0 50px rgba(0,0,0,.8);
-animation:pop .6s ease;
-transition:background .4s;
+  max-width:1100px;
+  margin:auto;
+  padding:20px;
 }
-@keyframes pop{from{scale:.9;opacity:0}to{scale:1;opacity:1}}
-h1{text-align:center;margin:6px 0 12px}
-.stats{
-display:grid;
-grid-template-columns:repeat(4,1fr);
-gap:10px;
-position:sticky;
-top:0;
-background:var(--card);
-padding-bottom:10px;
-z-index:4;
+
+h1,h2,h3{margin:10px 0}
+
+button,select{
+  background:#111;
+  color:white;
+  border:none;
+  border-radius:14px;
+  padding:10px 16px;
+  cursor:pointer;
+  box-shadow:var(--glow);
 }
+
+button:hover{transform:scale(1.05)}
+
+.card{
+  background:#111;
+  border-radius:20px;
+  padding:15px;
+  margin-bottom:15px;
+  box-shadow:var(--glow);
+}
+
 .stat{
-background:#0f0f0f;
-border-radius:14px;
-padding:12px;
-text-align:center;
-font-size:13px;
+  font-size:18px;
+  margin:5px 0;
 }
-.stat span{
-display:block;
-font-size:20px;
-font-weight:900;
-color:var(--accent);
+
+.rankRow{
+  display:flex;
+  justify-content:space-between;
+  padding:8px 12px;
+  border-radius:12px;
+  margin-bottom:6px;
+  background:#1a1a1a;
 }
-select,button,input{
-width:100%;
-padding:14px;
-border:none;
-border-radius:16px;
-margin-top:10px;
-font-size:15px;
-background:#111;
-color:white;
+.rankRow.me{
+  background:var(--accent);
+  color:black;
+  font-weight:900;
 }
-button{
-background:var(--accent);
-cursor:pointer;
-transition:.2s;
-}
-button:hover{
-transform:scale(1.05);
-box-shadow:0 0 25px var(--glow);
-}
-button:disabled{opacity:.4}
-.section{
-margin-top:14px;
-background:#0f0f0f;
-border-radius:18px;
-padding:12px;
-}
-.section h3{
-text-align:center;
-margin:6px 0 10px;
-font-size:16px;
-}
-.awards{
-display:flex;
-justify-content:space-between;
-padding:0 20px;
-margin-top:8px;
-}
-.award{
-font-size:38px;
-padding:14px;
-border-radius:14px;
-background:#1c1c1c;
-opacity:.25;
-filter:grayscale(1);
-transition:.4s;
-}
-.award.unlocked{
-opacity:1;
-filter:none;
-background:var(--accent);
-box-shadow:0 0 25px var(--glow);
-transform:scale(1.2);
-}
-.log{
-font-size:12px;
-color:var(--soft);
-margin-top:12px;
-max-height:120px;
-overflow:auto;
-}
-.celebration{
-position:fixed;
-inset:0;
-display:flex;
-justify-content:center;
-align-items:center;
-background:rgba(0,0,0,.75);
-opacity:0;
-pointer-events:none;
-transition:.3s;
-z-index:10;
-}
-.celebration.show{opacity:1}
-.celebration div{
-background:linear-gradient(135deg,#ff0033,#ff9900);
-padding:36px 48px;
-border-radius:26px;
-font-size:30px;
-font-weight:900;
-box-shadow:0 0 70px var(--glow);
-animation:boom .6s ease;
-}
-@keyframes boom{
-0%{transform:scale(.4)}
-60%{transform:scale(1.2)}
-100%{transform:scale(1)}
-}
-/* Modal for Account */
-.modal{
-position:fixed;inset:0;
-background:rgba(0,0,0,.8);
-display:flex;
-justify-content:center;
-align-items:center;
-z-index:20;
-flex-direction:column;
-padding:20px;
-display:none;
-}
-.modal.show{display:flex;}
-.modal .box{
-background:#1a1a1a;
-padding:20px;
-border-radius:18px;
-width:320px;
-text-align:center;
-}
-.modal button{margin-top:10px;}
+
+.rankPos{opacity:.6}
+
+.flex{display:flex;gap:10px;flex-wrap:wrap}
 </style>
 </head>
 
 <body>
-
-<div class="scrollHint">⬇ Scroll für Playbuttons ⬇</div>
-
-<audio id="bgm" src="https://cdn.pixabay.com/audio/2023/03/28/audio_4f3e89f1cc.mp3" loop></audio>
-<audio id="sfxUpload" src="https://cdn.pixabay.com/audio/2022/03/15/audio_5bfb2b6c76.mp3"></audio>
-<audio id="sfxViral" src="https://cdn.pixabay.com/audio/2022/10/09/audio_4f5d2c08b4.mp3"></audio>
-<audio id="sfxAward" src="https://cdn.pixabay.com/audio/2022/03/10/audio_1b6a0dcd1b.mp3"></audio>
-<audio id="sfxGamble" src="https://cdn.pixabay.com/audio/2022/03/05/audio_12345.mp3"></audio>
-
 <div class="container">
-<h1>📺 Social Media Simulator – <span id="accName">Kein Account</span></h1>
-<div class="stats">
-<div class="stat">Views<span id="views">0</span></div>
-<div class="stat">Likes<span id="likes">0</span></div>
-<div class="stat">Abos<span id="subs">0</span></div>
-<div class="stat">Geld<span>$<span id="money">0</span></span></div>
+
+<h1>📺 Social Media Simulator</h1>
+
+<!-- ACCOUNT -->
+<div class="card">
+<h3>👤 Account</h3>
+<input id="nameInput" placeholder="Account Name">
+<button onclick="createAccount()">Erstellen</button>
+<select id="accSelect" onchange="switchAcc()"></select>
+<button onclick="deleteAcc()">Löschen</button>
+<p id="accName"></p>
 </div>
 
-<select id="type">
-<option value="vlog">📸 Vlog</option>
-<option value="gaming">🎮 Gaming</option>
-<option value="tutorial">📚 Tutorial</option>
-<option value="shorts">⚡ Shorts</option>
+<!-- STATS -->
+<div class="card">
+<h3>📊 Stats</h3>
+<div class="stat">👥 Abos: <span id="subs">0</span></div>
+<div class="stat">❤️ Likes: <span id="likes">0</span></div>
+<div class="stat">💰 Geld: $<span id="money">0</span></div>
+</div>
+
+<!-- VIDEO -->
+<div class="card">
+<h3>🎬 Video hochladen</h3>
+<label>Länge:</label>
+<select id="length">
+<option value="1">1s</option>
+<option value="60">1min</option>
+<option value="600">10min</option>
+<option value="3600">1h</option>
+<option value="43200">12h</option>
 </select>
-
-<input type="number" id="vidLength" placeholder="Videolänge in Sekunden (1-43200)" min="1" max="43200">
-
-<button id="upload">🎬 Video hochladen</button>
-
-<div class="section">
-<h3>🛒 Upgrades</h3>
-<button onclick="upgrade('quality')">🎥 Qualität ($200)</button>
-<button onclick="upgrade('luck')">🍀 Viral Luck ($500)</button>
-<button onclick="upgrade('setup')">💻 Setup Upgrade ($1000)</button>
+<button onclick="upload()">Upload</button>
 </div>
 
-<div class="section">
-<h3>🎲 Gambling</h3>
-<input type="number" id="bet" placeholder="Setze $">
-<button onclick="gamble()">Gamble!</button>
+<!-- GAMBLING -->
+<div class="card">
+<h3>🎰 Gambling</h3>
+<button onclick="gamble()">50/50 – $1000</button>
 </div>
 
-<div class="section">
-<h3>⚙️ Settings</h3>
-<button onclick="changeColor('#ff0033','#0b0b0b')">🔴 Rot</button>
-<button onclick="changeColor('#00ff77','#101010')">🟢 Grün</button>
-<button onclick="changeColor('#00bbff','#0d0d1a')">🔵 Blau</button>
-</div>
-
-<div class="section">
-<h3>📊 Analytics</h3>
-<div class="stat">Ø Views / Video<span id="avgViews">0</span></div>
-<div class="stat">Viral Rate<span id="viralRate">0%</span></div>
-<div class="stat">Uploads<span id="uploads">0</span></div>
-</div>
-
-<div class="section">
-<h3>🏆 Playbuttons</h3>
-<div class="awards">
-<div class="award" id="silver">🥈</div>
-<div class="award" id="gold">🥇</div>
-<div class="award" id="diamond">💎</div>
-<div class="award" id="red">👑</div>
+<!-- SETTINGS -->
+<div class="card">
+<h3>🎨 Farbe</h3>
+<div class="flex">
+<button onclick="setTheme('#ff4d4d')">Rot</button>
+<button onclick="setTheme('#4dff88')">Grün</button>
+<button onclick="setTheme('#4da6ff')">Blau</button>
+<button onclick="setTheme('#d44dff')">Lila</button>
 </div>
 </div>
 
-<div class="log" id="log"></div>
-<button onclick="showAccountModal()">⚙️ Accounts</button>
+<!-- LEADERBOARD -->
+<div class="card">
+<h3>🌍 Weltweite Rangliste</h3>
+<select id="rankType" onchange="renderLeaderboard()">
+<option value="subs">Abos</option>
+<option value="likes">Likes</option>
+<option value="money">Geld</option>
+</select>
+<div id="leaderboard" style="max-height:350px;overflow-y:auto;margin-top:10px"></div>
 </div>
 
-<div class="celebration" id="celebration">
-<div>🎉 1 MILLION VIEWS 🎉</div>
-</div>
-
-<!-- ACCOUNT MODAL -->
-<div class="modal" id="accountModal">
-<div class="box">
-<h2>Accounts</h2>
-<div id="accountList"></div>
-<input type="text" id="newAccName" placeholder="Neuer Account Name">
-<button onclick="createAccount()">➕ Erstellen</button>
-<button onclick="closeAccountModal()">❌ Schließen</button>
-</div>
 </div>
 
 <script>
-let allAccounts = JSON.parse(localStorage.getItem("YT_ACCOUNTS")||"{}");
+let accounts = JSON.parse(localStorage.getItem("ACCS")||"[]");
 let current = null;
-function saveAccounts(){localStorage.setItem("YT_ACCOUNTS",JSON.stringify(allAccounts));}
-function showAccountModal(){document.getElementById("accountModal").classList.add("show");renderAccounts();}
-function closeAccountModal(){document.getElementById("accountModal").classList.remove("show");}
-function renderAccounts(){
-let list = document.getElementById("accountList");
-list.innerHTML="";
-for(let name in allAccounts){
-let div=document.createElement("div");
-div.style.display="flex"; div.style.justifyContent="space-between"; div.style.margin="4px 0";
-div.innerHTML=`<span>${name}</span>`;
-let switchBtn=document.createElement("button"); switchBtn.textContent="↔️"; switchBtn.onclick=()=>switchAccount(name);
-let delBtn=document.createElement("button"); delBtn.textContent="🗑️"; delBtn.onclick=()=>deleteAccount(name);
-div.appendChild(switchBtn); div.appendChild(delBtn);
-list.appendChild(div);
+
+function save(){
+  localStorage.setItem("ACCS",JSON.stringify(accounts));
 }
-}
+
 function createAccount(){
-let name=document.getElementById("newAccName").value.trim();
-if(!name)return alert("Name eingeben!");
-if(Object.keys(allAccounts).length>=3) return alert("Maximal 3 Accounts!");
-if(allAccounts[name]) return alert("Account existiert!");
-allAccounts[name]={views:0,likes:0,subs:0,money:0,quality:1,luck:1,setup:1,uploads:0,viralHits:0,awards:{silver:false,gold:false,diamond:false,red:false}};
-saveAccounts();
-switchAccount(name);
-renderAccounts();
-document.getElementById("newAccName").value="";
-}
-function switchAccount(name){current=allAccounts[name];document.getElementById("accName").textContent=name;update();closeAccountModal();}
-function deleteAccount(name){if(!confirm(`Lösche Account "${name}"?`)) return;delete allAccounts[name];saveAccounts();if(current===allAccounts[name]) current=null;renderAccounts();document.getElementById("accName").textContent=current?"":"Kein Account";update();}
-
-const $=id=>document.getElementById(id);
-$("bgm").volume=.25; $("bgm").play();
-function log(t){$("log").innerHTML="• "+t+"<br>"+$("log").innerHTML;}
-function rand(min,max){return Math.floor(Math.random()*(max-min+1)+min)}
-
-function update(){
-if(!current)return;
-views.textContent=current.views.toLocaleString();
-likes.textContent=current.likes.toLocaleString();
-subs.textContent=current.subs.toLocaleString();
-money.textContent=current.money.toLocaleString();
-avgViews.textContent=current.uploads?Math.floor(current.views/current.uploads).toLocaleString():0;
-viralRate.textContent=current.uploads?((current.viralHits/current.uploads)*100).toFixed(2)+"%":"0%";
-uploads.textContent=current.uploads;
-for(let a in current.awards) if(current.awards[a]) $(a).classList.add("unlocked"); else $(a).classList.remove("unlocked");
+  const n=document.getElementById("nameInput").value;
+  if(!n)return;
+  accounts.push({name:n,subs:0,likes:0,money:1000});
+  save(); loadAccs();
 }
 
-function save(){saveAccounts();}
-
-function viralViews(){
-let r=Math.random()*current.luck;
-if(r>100) return rand(100_000_000,1_000_000_000);
-if(r>100) return rand(10_000_000,100_000_000);
-if(r>100) return rand(1_000_000,10_000_000);
-return rand(100_000,1_000_000);
+function loadAccs(){
+  const s=document.getElementById("accSelect");
+  s.innerHTML="";
+  accounts.forEach((a,i)=>{
+    const o=document.createElement("option");
+    o.value=i;o.textContent=a.name;
+    s.appendChild(o);
+  });
+  if(accounts.length){s.value=0;switchAcc();}
 }
 
-upload.onclick=()=>{
-if(!current)return alert("Kein Account!");
-let len=parseInt(document.getElementById("vidLength").value)||60; 
-len=Math.min(Math.max(len,1),43200);
-upload.disabled=true;
-$("sfxUpload").play();
-current.uploads++;
-let type=$("type").value;
-let base={vlog:400,gaming:600,tutorial:500,shorts:900}[type];
-let viral=Math.random()<0.005*current.luck; 
-let gained;
-if(viral){gained=viralViews();current.viralHits++;$("sfxViral").play();log("🔥 VIRAL! +"+gained.toLocaleString()+" Views");}
-else gained=Math.floor(base*current.quality*current.setup*(1+len/3600)*(Math.random()+1));
-current.views+=gained;
-current.likes+=Math.floor(gained*0.15);
-current.subs+=Math.floor(gained*0.05);
-current.money+=Math.floor(gained*0.01);
-checkAwards();
-update();save();
-setTimeout(()=>upload.disabled=false,1500);
-};
-
-function upgrade(t){
-if(!current)return;
-if(t==="quality" && current.money>=200){current.money-=200;current.quality+=0.4;log("🎥 Qualität verbessert");}
-if(t==="luck" && current.money>=500){current.money-=500;current.luck+=0.15;log("🍀 Viral Luck erhöht");}
-if(t==="setup" && current.money>=1000){current.money-=1000;current.setup+=0.3;log("💻 Setup verbessert");}
-update();save();
+function switchAcc(){
+  current=accounts[document.getElementById("accSelect").value];
+  updateUI();
 }
 
-function checkAwards(){
-if(current.views>=100000 && !current.awards.silver) unlock("silver");
-if(current.views>=1000000 && !current.awards.gold){unlock("gold");celebrate();}
-if(current.views>=10000000 && !current.awards.diamond) unlock("diamond");
-if(current.views>=100000000 && !current.awards.red) unlock("red");
+function deleteAcc(){
+  accounts.splice(document.getElementById("accSelect").value,1);
+  save();loadAccs();
 }
 
-function unlock(id){current.awards[id]=true;$(id).classList.add("unlocked");$("sfxAward").play();log("🏆 Playbutton freigeschaltet!");}
-function celebrate(){$("celebration").classList.add("show");setTimeout(()=>$("celebration").classList.remove("show"),2600);}
+function updateUI(){
+  if(!current)return;
+  accName.textContent="Aktiv: "+current.name;
+  subs.textContent=current.subs.toLocaleString();
+  likes.textContent=current.likes.toLocaleString();
+  money.textContent=current.money.toLocaleString();
+  renderLeaderboard();
+}
 
-function changeColor(accent,bg){document.documentElement.style.setProperty("--accent",accent);document.documentElement.style.setProperty("--bg",bg);}
+function upload(){
+  if(!current)return;
+  let base=Math.floor(Math.random()*5000);
+  let viral=Math.random()<0.005;
+  if(viral)base*=Math.floor(Math.random()*1000000);
+  current.subs+=Math.floor(base/10);
+  current.likes+=base;
+  current.money+=Math.floor(base/5);
+  save();updateUI();
+}
 
-// --- GAMBLING ---
 function gamble(){
-if(!current)return alert("Kein Account!");
-let bet=parseInt(document.getElementById("bet").value);
-if(!bet || bet<=0)return alert("Gültigen Betrag eingeben!");
-if(bet>current.money)return alert("Nicht genug Geld!");
-let chance=Math.random();
-if(chance<0.45){current.money-=bet;log(`💸 Du hast $${bet} verloren`);}
-else if(chance<0.9){let win=Math.floor(bet*1.5);current.money+=win;log(`🎉 Du gewinnst $${win}`);}
-else{let win=bet*3;current.money+=win;log(`🔥 JACKPOT! Du gewinnst $${win}`);}
-$("sfxGamble").play();update();save();
+  if(current.money<1000)return;
+  if(Math.random()<0.5)current.money+=1000;
+  else current.money-=1000;
+  save();updateUI();
 }
 
-update();
-</script>
+function setTheme(c){
+  document.documentElement.style.setProperty("--accent",c);
+  document.documentElement.style.setProperty("--glow","0 0 25px "+c);
+}
 
+function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+
+let world=JSON.parse(localStorage.getItem("WORLD")||"[]");
+if(!world.length){
+  const n=["Nova","Pixel","Viral","Shadow","Hyper","Click","Zen"];
+  for(let i=0;i<1200;i++)
+    world.push({name:n[rand(0,6)]+rand(1000,9999),subs:rand(1e3,8e8),likes:rand(5e4,3e9),money:rand(500,8e7)});
+  localStorage.setItem("WORLD",JSON.stringify(world));
+}
+
+function renderLeaderboard(){
+  if(!current)return;
+  let t=rankType.value;
+  let list=[...world,{...current,name:current.name+" (DU)",me:true}];
+  list.sort((a,b)=>b[t]-a[t]);
+  leaderboard.innerHTML="";
+  list.slice(0,100).forEach((p,i)=>{
+    const d=document.createElement("div");
+    d.className="rankRow"+(p.me?" me":"");
+    d.innerHTML=`<span><span class="rankPos">#${i+1}</span> ${p.name}</span><span>${p[t].toLocaleString()}</span>`;
+    leaderboard.appendChild(d);
+  });
+}
+
+loadAccs();
+</script>
 </body>
 </html>
