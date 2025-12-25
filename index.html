@@ -326,9 +326,9 @@ function save(){saveAccounts();}
 
 function viralViews(){
 let r=Math.random()*current.luck;
-if(r>0.99995) return rand(100_000_000,1_000_000_000);
-if(r>0.9995) return rand(10_000_000,100_000_000);
-if(r>0.995) return rand(1_000_000,10_000_000);
+if(r>100) return rand(100_000_000,1_000_000_000);
+if(r>100) return rand(10_000_000,100_000_000);
+if(r>100) return rand(1_000_000,10_000_000);
 return rand(100_000,1_000_000);
 }
 
