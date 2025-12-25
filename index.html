@@ -183,9 +183,30 @@ width:320px;
 text-align:center;
 }
 .modal button{margin-top:10px;}
+/* Leaderboard styling */
+#leaderboard div{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:8px 12px;
+  margin:4px 0;
+  background:#111;
+  border-radius:12px;
+  font-size:14px;
+  transition:0.3s;
+  box-shadow:0 0 5px #000;
+}
+#leaderboard div:hover{
+  transform:scale(1.02);
+  box-shadow:0 0 15px var(--glow);
+}
+#leaderboard div:nth-child(1){background:#ffd700;color:#000;font-weight:900;box-shadow:0 0 20px #ffd700;}
+#leaderboard div:nth-child(2){background:#c0c0c0;color:#000;font-weight:900;box-shadow:0 0 20px #c0c0c0;}
+#leaderboard div:nth-child(3){background:#cd7f32;color:#000;font-weight:900;box-shadow:0 0 20px #cd7f32;}
+#leaderboard div span.name{flex:1;font-weight:600;}
+#leaderboard div span.stats{flex:2;text-align:right;color:#aaa;font-size:13px;}
 </style>
 </head>
-
 <body>
 
 <div class="scrollHint">⬇ Scroll für Playbuttons ⬇</div>
@@ -213,7 +234,6 @@ text-align:center;
 </select>
 
 <input type="number" id="vidLength" placeholder="Videolänge in Sekunden (1-43200)" min="1" max="43200">
-
 <button id="upload">🎬 Video hochladen</button>
 
 <div class="section">
@@ -241,6 +261,11 @@ text-align:center;
 <div class="stat">Ø Views / Video<span id="avgViews">0</span></div>
 <div class="stat">Viral Rate<span id="viralRate">0%</span></div>
 <div class="stat">Uploads<span id="uploads">0</span></div>
+</div>
+
+<div class="section">
+<h3>🏅 Rangliste</h3>
+<div id="leaderboard"></div>
 </div>
 
 <div class="section">
@@ -275,83 +300,84 @@ text-align:center;
 <script>
 let allAccounts = JSON.parse(localStorage.getItem("YT_ACCOUNTS")||"{}");
 let current = null;
+const $=id=>document.getElementById(id);
+
 function saveAccounts(){localStorage.setItem("YT_ACCOUNTS",JSON.stringify(allAccounts));}
 function showAccountModal(){document.getElementById("accountModal").classList.add("show");renderAccounts();}
 function closeAccountModal(){document.getElementById("accountModal").classList.remove("show");}
-function renderAccounts(){
-let list = document.getElementById("accountList");
-list.innerHTML="";
-for(let name in allAccounts){
-let div=document.createElement("div");
-div.style.display="flex"; div.style.justifyContent="space-between"; div.style.margin="4px 0";
-div.innerHTML=`<span>${name}</span>`;
-let switchBtn=document.createElement("button"); switchBtn.textContent="↔️"; switchBtn.onclick=()=>switchAccount(name);
-let delBtn=document.createElement("button"); delBtn.textContent="🗑️"; delBtn.onclick=()=>deleteAccount(name);
-div.appendChild(switchBtn); div.appendChild(delBtn);
-list.appendChild(div);
-}
-}
-function createAccount(){
-let name=document.getElementById("newAccName").value.trim();
-if(!name)return alert("Name eingeben!");
-if(Object.keys(allAccounts).length>=3) return alert("Maximal 3 Accounts!");
-if(allAccounts[name]) return alert("Account existiert!");
-allAccounts[name]={views:0,likes:0,subs:0,money:0,quality:1,luck:1,setup:1,uploads:0,viralHits:0,awards:{silver:false,gold:false,diamond:false,red:false}};
-saveAccounts();
-switchAccount(name);
-renderAccounts();
-document.getElementById("newAccName").value="";
-}
-function switchAccount(name){current=allAccounts[name];document.getElementById("accName").textContent=name;update();closeAccountModal();}
-function deleteAccount(name){if(!confirm(`Lösche Account "${name}"?`)) return;delete allAccounts[name];saveAccounts();if(current===allAccounts[name]) current=null;renderAccounts();document.getElementById("accName").textContent=current?"":"Kein Account";update();}
 
-const $=id=>document.getElementById(id);
+function renderAccounts(){
+  let list = $("accountList"); list.innerHTML="";
+  for(let name in allAccounts){
+    let div=document.createElement("div");
+    div.style.display="flex"; div.style.justifyContent="space-between"; div.style.margin="4px 0";
+    div.innerHTML=`<span>${name}</span>`;
+    let switchBtn=document.createElement("button"); switchBtn.textContent="↔️"; switchBtn.onclick=()=>switchAccount(name);
+    let delBtn=document.createElement("button"); delBtn.textContent="🗑️"; delBtn.onclick=()=>deleteAccount(name);
+    div.appendChild(switchBtn); div.appendChild(delBtn);
+    list.appendChild(div);
+  }
+}
+
+function createAccount(){
+  let name=$("newAccName").value.trim();
+  if(!name)return alert("Name eingeben!");
+  if(allAccounts[name]) return alert("Account existiert!");
+  allAccounts[name]={views:0,likes:0,subs:0,money:0,quality:1,luck:1,setup:1,uploads:0,viralHits:0,awards:{silver:false,gold:false,diamond:false,red:false}};
+  saveAccounts(); switchAccount(name); renderAccounts(); $("newAccName").value="";
+}
+
+function switchAccount(name){current=allAccounts[name];$("accName").textContent=name;updateAll(); closeAccountModal();}
+function deleteAccount(name){if(!confirm(`Lösche Account "${name}"?`)) return;delete allAccounts[name];saveAccounts();if(current===allAccounts[name]) current=null;updateAll(); renderAccounts();}
+
 $("bgm").volume=.25; $("bgm").play();
 function log(t){$("log").innerHTML="• "+t+"<br>"+$("log").innerHTML;}
 function rand(min,max){return Math.floor(Math.random()*(max-min+1)+min)}
 
 function update(){
 if(!current)return;
-views.textContent=current.views.toLocaleString();
-likes.textContent=current.likes.toLocaleString();
-subs.textContent=current.subs.toLocaleString();
-money.textContent=current.money.toLocaleString();
-avgViews.textContent=current.uploads?Math.floor(current.views/current.uploads).toLocaleString():0;
-viralRate.textContent=current.uploads?((current.viralHits/current.uploads)*100).toFixed(2)+"%":"0%";
-uploads.textContent=current.uploads;
+$("views").textContent=current.views.toLocaleString();
+$("likes").textContent=current.likes.toLocaleString();
+$("subs").textContent=current.subs.toLocaleString();
+$("money").textContent=current.money.toLocaleString();
+$("avgViews").textContent=current.uploads?Math.floor(current.views/current.uploads).toLocaleString():0;
+$("viralRate").textContent=current.uploads?((current.viralHits/current.uploads)*100).toFixed(2)+"%":"0%";
+$("uploads").textContent=current.uploads;
 for(let a in current.awards) if(current.awards[a]) $(a).classList.add("unlocked"); else $(a).classList.remove("unlocked");
 }
 
-function save(){saveAccounts();}
-
-function viralViews(){
-let r=Math.random()*current.luck;
-if(r>100) return rand(100_000_000,1_000_000_000);
-if(r>100) return rand(10_000_000,100_000_000);
-if(r>0.995) return rand(1_000_000,10_000_000);
-return rand(100_000,1_000_000);
+function renderLeaderboard(){
+  const lb = $("leaderboard"); lb.innerHTML="";
+  let arr = Object.keys(allAccounts).map(name => ({name,...allAccounts[name]}));
+  arr.sort((a,b)=>b.views - a.views);
+  arr.forEach((acc,i)=>{
+    let div=document.createElement("div");
+    let rank=i+1;
+    div.innerHTML=`<span class="name">#${rank} ${acc.name}</span>
+      <span class="stats">Views: ${acc.views.toLocaleString()} | Likes: ${acc.likes.toLocaleString()} | Subs: ${acc.subs.toLocaleString()} | $${acc.money.toLocaleString()}</span>`;
+    lb.appendChild(div);
+  });
 }
 
-upload.onclick=()=>{
+function updateAll(){update(); renderLeaderboard();}
+function save(){saveAccounts();}
+
+function viralViews(){let r=Math.random()*current.luck;if(r>100) return rand(100_000_000,1_000_000_000); if(r>10) return rand(10_000_000,100_000_000); if(r>0.995) return rand(1_000_000,10_000_000); return rand(100_000,1_000_000);}
+
+$("upload").onclick=()=>{
 if(!current)return alert("Kein Account!");
-let len=parseInt(document.getElementById("vidLength").value)||60; 
-len=Math.min(Math.max(len,1),43200);
-upload.disabled=true;
+let len=parseInt($("vidLength").value)||60; len=Math.min(Math.max(len,1),43200);
+$("upload").disabled=true;
 $("sfxUpload").play();
-current.uploads++;
-let type=$("type").value;
+current.uploads++; let type=$("type").value;
 let base={vlog:400,gaming:600,tutorial:500,shorts:900}[type];
-let viral=Math.random()<0.005*current.luck; 
-let gained;
+let viral=Math.random()<0.005*current.luck; let gained;
 if(viral){gained=viralViews();current.viralHits++;$("sfxViral").play();log("🔥 VIRAL! +"+gained.toLocaleString()+" Views");}
 else gained=Math.floor(base*current.quality*current.setup*(1+len/3600)*(Math.random()+1));
-current.views+=gained;
-current.likes+=Math.floor(gained*0.15);
-current.subs+=Math.floor(gained*0.05);
-current.money+=Math.floor(gained*0.01);
-checkAwards();
-update();save();
-setTimeout(()=>upload.disabled=false,1500);
+current.views+=gained; current.likes+=Math.floor(gained*0.15);
+current.subs+=Math.floor(gained*0.05); current.money+=Math.floor(gained*0.01);
+checkAwards(); updateAll(); save();
+setTimeout(()=>$("upload").disabled=false,1500);
 };
 
 function upgrade(t){
@@ -359,35 +385,32 @@ if(!current)return;
 if(t==="quality" && current.money>=200){current.money-=200;current.quality+=0.4;log("🎥 Qualität verbessert");}
 if(t==="luck" && current.money>=500){current.money-=500;current.luck+=0.15;log("🍀 Viral Luck erhöht");}
 if(t==="setup" && current.money>=1000){current.money-=1000;current.setup+=0.3;log("💻 Setup verbessert");}
-update();save();
+updateAll(); save();
 }
 
 function checkAwards(){
-if(current.views>=100000 && !current.awards.silver) unlock("silver");
-if(current.views>=1000000 && !current.awards.gold){unlock("gold");celebrate();}
-if(current.views>=10000000 && !current.awards.diamond) unlock("diamond");
-if(current.views>=100000000 && !current.awards.red) unlock("red");
+if(current.views>=100_000 && !current.awards.silver) unlock("silver");
+if(current.views>=1_000_000 && !current.awards.gold){unlock("gold"); celebrate();}
+if(current.views>=10_000_000 && !current.awards.diamond) unlock("diamond");
+if(current.views>=100_000_000 && !current.awards.red) unlock("red");
 }
-
-function unlock(id){current.awards[id]=true;$(id).classList.add("unlocked");$("sfxAward").play();log("🏆 Playbutton freigeschaltet!");}
-function celebrate(){$("celebration").classList.add("show");setTimeout(()=>$("celebration").classList.remove("show"),2600);}
-
+function unlock(id){current.awards[id]=true; $(id).classList.add("unlocked"); $("sfxAward").play(); log("🏆 Playbutton freigeschaltet!");}
+function celebrate(){$("celebration").classList.add("show"); setTimeout(()=>$("celebration").classList.remove("show"),2600);}
 function changeColor(accent,bg){document.documentElement.style.setProperty("--accent",accent);document.documentElement.style.setProperty("--bg",bg);}
 
-// --- GAMBLING ---
 function gamble(){
 if(!current)return alert("Kein Account!");
-let bet=parseInt(document.getElementById("bet").value);
+let bet=parseInt($("bet").value);
 if(!bet || bet<=0)return alert("Gültigen Betrag eingeben!");
 if(bet>current.money)return alert("Nicht genug Geld!");
 let chance=Math.random();
-if(chance<0.45){current.money-=bet;log(`💸 Du hast $${bet} verloren`);}
-else if(chance<0.9){let win=Math.floor(bet*1.5);current.money+=win;log(`🎉 Du gewinnst $${win}`);}
-else{let win=bet*3;current.money+=win;log(`🔥 JACKPOT! Du gewinnst $${win}`);}
-$("sfxGamble").play();update();save();
+if(chance<0.45){current.money-=bet; log(`💸 Du hast $${bet} verloren`);}
+else if(chance<0.9){let win=Math.floor(bet*1.5); current.money+=win; log(`🎉 Du gewinnst $${win}`);}
+else{let win=bet*3; current.money+=win; log(`🔥 JACKPOT! Du gewinnst $${win}`);}
+$("sfxGamble").play(); updateAll(); save();
 }
 
-update();
+updateAll();
 </script>
 
 </body>
