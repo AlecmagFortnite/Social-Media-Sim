@@ -205,6 +205,25 @@ text-align:center;
 #globalLeaderboard div span.name{flex:1;}
 #globalLeaderboard div span.value{font-weight:700;color:var(--accent);}
 #leaderStat{margin-bottom:6px;}
+/* Stocks */
+#stocksList div{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:6px 10px;
+  margin:2px 0;
+  background:#111;
+  border-radius:10px;
+  font-size:13px;
+  transition:.3s;
+}
+#stocksList div:hover{
+  transform:scale(1.02);
+  box-shadow:0 0 10px var(--glow);
+}
+#stocksList div span.name{flex:1;}
+#stocksList div span.price{font-weight:700;color:var(--accent);}
+#stocksList button{padding:4px 8px;font-size:12px;margin-left:4px;}
 </style>
 </head>
 <body>
@@ -275,6 +294,11 @@ text-align:center;
 </div>
 
 <div class="section">
+<h3>📈 Aktienmarkt</h3>
+<div id="stocksList"></div>
+</div>
+
+<div class="section">
 <h3>🏆 Playbuttons</h3>
 <div class="awards">
 <div class="award" id="silver">🥈</div>
@@ -304,6 +328,7 @@ text-align:center;
 </div>
 
 <script>
+// --- Accounts & Simulator ---
 let allAccounts = JSON.parse(localStorage.getItem("YT_ACCOUNTS")||"{}");
 let current = null;
 const $=id=>document.getElementById(id);
@@ -352,6 +377,7 @@ $("uploads").textContent=current.uploads;
 for(let a in current.awards) if(current.awards[a]) $(a).classList.add("unlocked"); else $(a).classList.remove("unlocked");
 }
 
+// --- Global Leaderboard ---
 function renderGlobalLeaderboard(){
   const stat = $("leaderStat").value;
   const lb = $("globalLeaderboard");
@@ -366,8 +392,59 @@ function renderGlobalLeaderboard(){
   });
 }
 
+// --- Stocks ---
+let stocks = {
+  Marcedes: {price: 150, owned:0},
+  Apfel: {price: 250, owned:0},
+  Boogle: {price: 90, owned:0},
+  Ztorm: {price: 120, owned:0}
+};
+
+function renderStocks(){
+  const list = $("stocksList");
+  list.innerHTML = "";
+  for(let name in stocks){
+    const stock = stocks[name];
+    let div = document.createElement("div");
+    div.innerHTML = `<span class="name">${name}</span>
+                     <span class="price">$${stock.price.toLocaleString()}</span>`;
+    let buyBtn = document.createElement("button"); buyBtn.textContent="Kaufen"; buyBtn.onclick = ()=>buyStock(name);
+    let sellBtn = document.createElement("button"); sellBtn.textContent="Verkaufen"; sellBtn.onclick = ()=>sellStock(name);
+    div.appendChild(buyBtn); div.appendChild(sellBtn);
+    list.appendChild(div);
+  }
+}
+
+function buyStock(name){
+  if(!current)return alert("Kein Account!");
+  let stock = stocks[name];
+  if(current.money<stock.price) return alert("Nicht genug Geld!");
+  current.money -= stock.price; stock.owned++;
+  log(`💹 ${name} gekauft für $${stock.price}`);
+  updateAll(); renderStocks(); save();
+}
+
+function sellStock(name){
+  if(!current)return alert("Kein Account!");
+  let stock = stocks[name];
+  if(stock.owned<=0) return alert("Du besitzt keine Aktien von "+name);
+  current.money += stock.price; stock.owned--;
+  log(`💹 ${name} verkauft für $${stock.price}`);
+  updateAll(); renderStocks(); save();
+}
+
+function updateStockPrices(){
+  for(let name in stocks){
+    let change = Math.random()*10-5;
+    stocks[name].price = Math.max(1, Math.floor(stocks[name].price + change));
+  }
+  renderStocks();
+}
+setInterval(updateStockPrices,5000);
+renderStocks();
+
+// --- Simulator Functions ---
 function updateAll(){update(); renderGlobalLeaderboard();}
-function save(){saveAccounts();}
 
 function viralViews(){let r=Math.random()*current.luck;if(r>100) return rand(100_000_000,1_000_000_000); if(r>10) return rand(10_000_000,100_000_000); if(r>0.995) return rand(1_000_000,10_000_000); return rand(100_000,1_000_000);}
 
@@ -396,29 +473,31 @@ updateAll(); save();
 }
 
 function checkAwards(){
-if(current.views>=100_000 && !current.awards.silver) unlock("silver");
-if(current.views>=1_000_000 && !current.awards.gold){unlock("gold"); celebrate();}
-if(current.views>=10_000_000 && !current.awards.diamond) unlock("diamond");
-if(current.views>=100_000_000 && !current.awards.red) unlock("red");
+if(current.views>=100000 && !current.awards.silver) unlock("silver");
+if(current.views>=1000000 && !current.awards.gold){unlock("gold");celebrate();}
+if(current.views>=10000000 && !current.awards.diamond) unlock("diamond");
+if(current.views>=100000000 && !current.awards.red) unlock("red");
 }
-function unlock(id){current.awards[id]=true; $(id).classList.add("unlocked"); $("sfxAward").play(); log("🏆 Playbutton freigeschaltet!");}
-function celebrate(){$("celebration").classList.add("show"); setTimeout(()=>$("celebration").classList.remove("show"),2600);}
+
+function unlock(id){current.awards[id]=true;$(id).classList.add("unlocked");$("sfxAward").play();log("🏆 Playbutton freigeschaltet!");}
+function celebrate(){$("celebration").classList.add("show");setTimeout(()=>$("celebration").classList.remove("show"),2600);}
+
 function changeColor(accent,bg){document.documentElement.style.setProperty("--accent",accent);document.documentElement.style.setProperty("--bg",bg);}
 
+// --- GAMBLING ---
 function gamble(){
 if(!current)return alert("Kein Account!");
 let bet=parseInt($("bet").value);
 if(!bet || bet<=0)return alert("Gültigen Betrag eingeben!");
 if(bet>current.money)return alert("Nicht genug Geld!");
 let chance=Math.random();
-if(chance<0.45){current.money-=bet; log(`💸 Du hast $${bet} verloren`);}
-else if(chance<0.9){let win=Math.floor(bet*1.5); current.money+=win; log(`🎉 Du gewinnst $${win}`);}
-else{let win=bet*3; current.money+=win; log(`🔥 JACKPOT! Du gewinnst $${win}`);}
+if(chance<0.45){current.money-=bet;log(`💸 Du hast $${bet} verloren`);}
+else if(chance<0.9){let win=Math.floor(bet*1.5);current.money+=win;log(`🎉 Du gewinnst $${win}`);}
+else{let win=bet*3;current.money+=win;log(`🔥 JACKPOT! Du gewinnst $${win}`);}
 $("sfxGamble").play(); updateAll(); save();
 }
 
 updateAll();
 </script>
-
 </body>
 </html>
